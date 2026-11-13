@@ -1,0 +1,527 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Study Planner</title>
+<style>
+:root {
+--bg:#f3f5ff;--card:#fff;--text:#20243a;--muted:#737991;
+--primary:#6658d3;--soft:#eeebff;--border:#e5e6f0;
+--good:#27a477;--danger:#e45b68;
+}
+body.dark {
+--bg:#171827;--card:#24263a;--text:#f2f2ff;--muted:#b5b7cc;
+--primary:#a69aff;--soft:#36314f;--border:#3b3d53;
+--good:#50c99a;--danger:#ff7b86;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+.container{max-width:850px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:24px;margin:0 0 5px}
+h2{font-size:19px;margin:0 0 14px}
+h3{font-size:16px}
+p{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:17px;margin-bottom:16px}
+button{border:0;border-radius:9px;padding:10px 13px;background:var(--primary);color:white;font-weight:bold;cursor:pointer;margin:3px}
+button.secondary{background:var(--soft);color:var(--text)}
+button.danger{background:var(--danger)}
+input,textarea{width:100%;padding:11px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);margin:5px 0 10px;font-size:15px}
+textarea{min-height:85px}
+.form-row{display:flex;gap:7px;flex-wrap:wrap}
+.form-row input{flex:1;min-width:110px}
+.item{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--border)}
+.item:last-child{border-bottom:0}
+.item span{flex:1;overflow-wrap:anywhere}
+.item.done span{text-decoration:line-through;color:var(--muted)}
+.item input[type=checkbox]{width:18px;height:18px;margin:0}
+.item button{padding:7px 10px}
+.muted{color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--soft);border-radius:12px;padding:13px;text-align:center}
+.stat strong{display:block;font-size:22px;margin-bottom:4px}
+.progress-bg{background:var(--border);height:12px;border-radius:20px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--good);border-radius:20px;transition:width .3s}
+nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:17px}
+nav a{color:var(--primary);background:var(--soft);padding:8px 10px;border-radius:9px;text-decoration:none;font-size:13px;font-weight:bold}
+.chart{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:145px;margin-top:12px}
+.chart-day{display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:end}
+.bar-bg{height:105px;width:100%;max-width:36px;background:var(--border);border-radius:7px;display:flex;align-items:end;overflow:hidden}
+.bar{width:100%;background:var(--primary);border-radius:7px 7px 0 0}
+.timer{font-size:48px;font-weight:bold;text-align:center;margin:12px 0;color:var(--primary)}
+.timer-mode{text-align:center;color:var(--muted)}
+.note{border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:9px}
+.note p{white-space:pre-wrap}
+.goal-count{font-weight:bold;color:var(--good);margin-bottom:10px}
+
+/* Calendar */
+.calendar-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.calendar-heading h3{margin:0;text-align:center;flex:1}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.calendar-weekday{text-align:center;font-size:12px;color:var(--muted);padding:7px 0}
+.calendar-day{position:relative;min-width:0;height:43px;padding:5px 1px;margin:0;background:var(--soft);color:var(--text);border:1px solid transparent;border-radius:8px}
+.calendar-day.empty{visibility:hidden}
+.calendar-day.selected{border:2px solid var(--primary);background:var(--card)}
+.calendar-day.today{font-weight:bold}
+.calendar-day.has-activity:after{content:"";position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--good)}
+.calendar-day.selected:after{background:var(--primary)}
+.history-box{background:var(--soft);padding:12px;border-radius:10px;margin-top:14px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:12px}
+@media(max-width:480px){body{padding:11px}.stats{gap:6px}.stat{padding:10px 4px}.stat strong{font-size:18px}.calendar-day{height:39px;font-size:12px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+<div>
+<h1>📚 My Study Planner</h1>
+<div class="muted" id="todayDate"></div>
+</div>
+<button class="secondary" id="themeButton" onclick="toggleTheme()">🌙 Dark Mode</button>
+</header>
+
+<nav>
+<a href="#dashboard">Dashboard</a>
+<a href="#goals">Goals</a>
+<a href="#homework">Homework</a>
+<a href="#timetable">Timetable</a>
+<a href="#calendar">Calendar</a>
+<a href="#notes">Notes</a>
+<a href="#timerSection">Timer</a>
+</nav>
+
+<section class="card" id="dashboard">
+<h2>👋 Welcome to your study space!</h2>
+<div class="stats">
+<div class="stat"><strong id="taskStat">0/0</strong><span class="muted">Homework done</span></div>
+<div class="stat"><strong id="goalStat">0/0</strong><span class="muted">Goals done</span></div>
+<div class="stat"><strong id="streakStat">0 🔥</strong><span class="muted">Study streak</span></div>
+</div>
+<h3>Today's overall progress</h3>
+<div class="progress-bg"><div class="progress-fill" id="dailyProgress"></div></div>
+<p class="muted" id="progressText">0% completed</p>
+<p class="muted">Small steps every day lead to big achievements!</p>
+</section>
+
+<section class="card" id="goals">
+<h2>🎯 Daily Goals</h2>
+<p class="muted">Set small goals for today and tick them when you finish.</p>
+<div class="goal-count" id="goalCount">0 of 0 goals completed</div>
+<div class="progress-bg"><div class="progress-fill" id="goalProgress"></div></div>
+<div class="form-row" style="margin-top:12px">
+<input id="goalInput" placeholder="Example: Read 10 pages">
+<button onclick="addGoal()">Add Goal</button>
+</div>
+<div id="goalList"></div>
+</section>
+
+<section class="card" id="homework">
+<h2>📝 Homework Checklist</h2>
+<div class="form-row">
+<input id="taskInput" placeholder="Enter your homework">
+<button onclick="addTask()">Add</button>
+</div>
+<div id="taskList"></div>
+</section>
+
+<section class="card" id="timetable">
+<h2>🕒 Daily Timetable</h2>
+<div class="form-row">
+<input id="subjectInput" placeholder="Subject">
+<input id="timeInput" type="time" aria-label="Study time">
+<button onclick="addSession()">Add</button>
+</div>
+<div id="sessionList"></div>
+</section>
+
+<section class="card" id="calendar">
+<h2>📅 Calendar & Study History</h2>
+<p class="muted">Green dots show days when you completed something.</p>
+<div class="calendar-heading">
+<button class="secondary" onclick="changeMonth(-1)">❮</button>
+<h3 id="monthTitle"></h3>
+<button class="secondary" onclick="changeMonth(1)">❯</button>
+</div>
+<div class="calendar-grid" id="calendarGrid"></div>
+<div class="history-box" id="historyDetails"></div>
+</section>
+
+<section class="card">
+<h2>📊 Weekly Progress</h2>
+<p class="muted">Completed homework and study sessions over the last 7 days.</p>
+<div class="chart" id="weeklyChart"></div>
+</section>
+
+<section class="card">
+<h2>🔥 Study Streak</h2>
+<p id="streakMessage">Complete a study task to start your streak!</p>
+<p class="muted">Your streak counts days when you complete homework or a timetable session.</p>
+</section>
+
+<section class="card" id="notes">
+<h2>📒 Digital Notes</h2>
+<input id="noteTitle" placeholder="Note title">
+<textarea id="noteText" placeholder="Write your notes here..."></textarea>
+<button onclick="saveNote()">Save Note</button>
+<button class="secondary" onclick="cancelNoteEdit()">Clear</button>
+<div id="notesList"></div>
+</section>
+
+<section class="card" id="timerSection">
+<h2>⏱️ Pomodoro Study Timer</h2>
+<div class="timer-mode" id="timerMode">📖 Study Time</div>
+<div class="timer" id="timerDisplay">25:00</div>
+<div style="text-align:center">
+<button onclick="startTimer()">Start</button>
+<button class="secondary" onclick="pauseTimer()">Pause</button>
+<button class="secondary" onclick="resetTimer()">Reset</button>
+</div>
+<div style="text-align:center;margin-top:12px">
+<button class="secondary" onclick="setTimerMode('study')">25 min Study</button>
+<button class="secondary" onclick="setTimerMode('break')">5 min Break</button>
+</div>
+<p class="muted" style="text-align:center">Focus for 25 minutes, then take a 5-minute break.</p>
+</section>
+
+<footer>Made with ❤️ for a brighter future. Keep learning!</footer>
+</div>
+
+<script>
+function loadData(key,fallback){
+ try{return JSON.parse(localStorage.getItem(key))??fallback}
+ catch{return fallback}
+}
+function saveData(key,data){localStorage.setItem(key,JSON.stringify(data))}
+let tasks=loadData('studyTasks',[]);
+let sessions=loadData('studySessions',[]);
+let notes=loadData('studyNotes',[]);
+let goalsByDate=loadData('studyGoals',{});
+if(!Array.isArray(tasks))tasks=[];
+if(!Array.isArray(sessions))sessions=[];
+if(!Array.isArray(notes))notes=[];
+if(!goalsByDate||typeof goalsByDate!=='object'||Array.isArray(goalsByDate))goalsByDate={};
+
+let editingNoteId=null;
+const todayKey=()=>{
+ const d=new Date();
+ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+const today=todayKey();
+
+function dateKey(date){
+ return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function makeId(){return Date.now()+Math.random().toString(16).slice(2)}
+function recordCompletion(item){
+ if(item.done&&!item.completedAt)item.completedAt=Date.now();
+ if(!item.done)item.completedAt=null;
+}
+function wasCompletedToday(item){
+ return item.completedAt&&new Date(item.completedAt).toDateString()===new Date().toDateString();
+}
+document.getElementById('todayDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// Theme
+function applyTheme(){
+ const dark=localStorage.getItem('studyDarkMode')==='true';
+ document.body.classList.toggle('dark',dark);
+ document.getElementById('themeButton').textContent=dark?'☀️ Light Mode':'🌙 Dark Mode';
+}
+function toggleTheme(){
+ const dark=document.body.classList.toggle('dark');
+ localStorage.setItem('studyDarkMode',String(dark));
+ applyTheme();
+}
+applyTheme();
+
+// Goals
+function todaysGoals(){
+ if(!Array.isArray(goalsByDate[today]))goalsByDate[today]=[];
+ return goalsByDate[today];
+}
+function addGoal(){
+ const input=document.getElementById('goalInput');
+ const text=input.value.trim();
+ if(!text)return alert('Please enter a goal first!');
+ todaysGoals().push({id:makeId(),text,done:false});
+ saveData('studyGoals',goalsByDate);
+ input.value='';
+ renderGoals();
+}
+function toggleGoal(id,checked){
+ const goal=todaysGoals().find(g=>g.id===id);
+ if(!goal)return;
+ goal.done=checked;
+ saveData('studyGoals',goalsByDate);
+ renderGoals();
+}
+function deleteGoal(id){
+ goalsByDate[today]=todaysGoals().filter(g=>g.id!==id);
+ saveData('studyGoals',goalsByDate);
+ renderGoals();
+}
+function renderGoals(){
+ const list=todaysGoals();
+ const done=list.filter(g=>g.done).length;
+ const percent=list.length?Math.round(done/list.length*100):0;
+ document.getElementById('goalCount').textContent=`${done} of ${list.length} goals completed`;
+ document.getElementById('goalProgress').style.width=percent+'%';
+ document.getElementById('goalStat').textContent=`${done}/${list.length}`;
+ document.getElementById('goalList').innerHTML=list.length?list.map(g=>`
+ <div class="item ${g.done?'done':''}">
+ <input type="checkbox" ${g.done?'checked':''} onchange="toggleGoal('${g.id}',this.checked)">
+ <span>${escapeHTML(g.text)}</span>
+ <button class="danger" onclick="deleteGoal('${g.id}')">Delete</button>
+ </div>`).join(''):'<p class="muted">No goals yet. Add your first goal above!</p>';
+ updateDashboard();
+}
+
+// Homework
+function addTask(){
+ const input=document.getElementById('taskInput'),text=input.value.trim();
+ if(!text)return alert('Please enter your homework!');
+ tasks.push({id:makeId(),text,done:false,completedAt:null});
+ saveData('studyTasks',tasks);input.value='';renderTasks();
+}
+function toggleTask(id,checked){
+ const task=tasks.find(t=>t.id===id);if(!task)return;
+ task.done=checked;recordCompletion(task);
+ saveData('studyTasks',tasks);renderTasks();
+}
+function deleteTask(id){
+ tasks=tasks.filter(t=>t.id!==id);saveData('studyTasks',tasks);renderTasks();
+}
+function renderTasks(){
+ document.getElementById('taskList').innerHTML=tasks.length?tasks.map(t=>`
+ <div class="item ${t.done?'done':''}">
+ <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}',this.checked)">
+ <span>${escapeHTML(t.text)}</span>
+ <button class="danger" onclick="deleteTask('${t.id}')">Delete</button>
+ </div>`).join(''):'<p class="muted">No homework added yet.</p>';
+ updateDashboard();
+}
+
+// Timetable
+function addSession(){
+ const subjectInput=document.getElementById('subjectInput');
+ const timeInput=document.getElementById('timeInput');
+ const subject=subjectInput.value.trim(),time=timeInput.value;
+ if(!subject||!time)return alert('Please enter a subject and time!');
+ sessions.push({id:makeId(),subject,time,done:false,completedAt:null});
+ saveData('studySessions',sessions);
+ subjectInput.value='';timeInput.value='';renderSessions();
+}
+function toggleSession(id,checked){
+ const session=sessions.find(s=>s.id===id);if(!session)return;
+ session.done=checked;recordCompletion(session);
+ saveData('studySessions',sessions);renderSessions();
+}
+function deleteSession(id){
+ sessions=sessions.filter(s=>s.id!==id);saveData('studySessions',sessions);renderSessions();
+}
+function renderSessions(){
+ const sorted=[...sessions].sort((a,b)=>a.time.localeCompare(b.time));
+ document.getElementById('sessionList').innerHTML=sorted.length?sorted.map(s=>`
+ <div class="item ${s.done?'done':''}">
+ <input type="checkbox" ${s.done?'checked':''} onchange="toggleSession('${s.id}',this.checked)">
+ <span><strong>${escapeHTML(s.time)}</strong> — ${escapeHTML(s.subject)}</span>
+ <button class="danger" onclick="deleteSession('${s.id}')">Delete</button>
+ </div>`).join(''):'<p class="muted">Your timetable is empty. Add a study session!</p>';
+ updateDashboard();
+}
+
+// Calendar and history
+let calendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+let selectedDate=today;
+
+function changeMonth(amount){
+ calendarMonth.setMonth(calendarMonth.getMonth()+amount);
+ renderCalendar();
+}
+function activityForDate(key){
+ const completedTasks=tasks.filter(t=>t.completedAt&&dateKey(new Date(t.completedAt))===key);
+ const completedSessions=sessions.filter(s=>s.completedAt&&dateKey(new Date(s.completedAt))===key);
+ const goals=Array.isArray(goalsByDate[key])?goalsByDate[key]:[];
+ const completedGoals=goals.filter(g=>g.done);
+ return {completedTasks,completedSessions,goals,completedGoals};
+}
+function renderCalendar(){
+ const year=calendarMonth.getFullYear(),month=calendarMonth.getMonth();
+ document.getElementById('monthTitle').textContent=calendarMonth.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+ const firstDay=new Date(year,month,1).getDay();
+ const daysInMonth=new Date(year,month+1,0).getDate();
+ let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="calendar-weekday">${d}</div>`).join('');
+ for(let i=0;i<firstDay;i++)html+='<button class="calendar-day empty" disabled></button>';
+ for(let day=1;day<=daysInMonth;day++){
+  const date=new Date(year,month,day),key=dateKey(date);
+  const activity=activityForDate(key);
+  const hasActivity=activity.completedTasks.length+activity.completedSessions.length+activity.completedGoals.length>0;
+  const classes=['calendar-day'];
+  if(key===selectedDate)classes.push('selected');
+  if(key===today)classes.push('today');
+  if(hasActivity)classes.push('has-activity');
+  html+=`<button class="${classes.join(' ')}" onclick="selectDate('${key}')">${day}</button>`;
+ }
+ document.getElementById('calendarGrid').innerHTML=html;
+ renderHistory();
+}
+function selectDate(key){
+ selectedDate=key;
+ renderCalendar();
+}
+function renderHistory(){
+ const a=activityForDate(selectedDate);
+ const date=new Date(selectedDate+'T12:00:00');
+ let html=`<h3>📖 ${date.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>`;
+ const total=a.completedTasks.length+a.completedSessions.length+a.completedGoals.length;
+ html+=`<p class="muted">${total} completed item${total===1?'':'s'} recorded</p>`;
+ if(a.completedTasks.length){
+  html+='<strong>📝 Homework completed</strong>';
+  a.completedTasks.forEach(t=>html+=`<div class="item"><span>✓ ${escapeHTML(t.text)}</span></div>`);
+ }
+ if(a.completedSessions.length){
+  html+='<strong>🕒 Study sessions completed</strong>';
+  a.completedSessions.forEach(s=>html+=`<div class="item"><span>✓ ${escapeHTML(s.subject)}</span></div>`);
+ }
+ if(a.completedGoals.length){
+  html+='<strong>🎯 Goals completed</strong>';
+  a.completedGoals.forEach(g=>html+=`<div class="item"><span>✓ ${escapeHTML(g.text)}</span></div>`);
+ }
+ if(!total)html+='<p class="muted">No completed activities recorded for this day yet.</p>';
+ document.getElementById('historyDetails').innerHTML=html;
+}
+
+// Weekly chart and streak
+function activityDates(){
+ const dates=new Set();
+ [...tasks,...sessions].forEach(item=>{
+  if(item.completedAt)dates.add(new Date(item.completedAt).toDateString());
+ });
+ return dates;
+}
+function updateStreak(){
+ const dates=activityDates();let streak=0,check=new Date();
+ if(!dates.has(check.toDateString()))check.setDate(check.getDate()-1);
+ while(dates.has(check.toDateString())){streak++;check.setDate(check.getDate()-1)}
+ document.getElementById('streakStat').textContent=streak+' 🔥';
+ document.getElementById('streakMessage').textContent=streak
+ ?`Amazing! Your current study streak is ${streak} day${streak===1?'':'s'}. Keep it going!`
+ :'Complete a homework task or timetable session today to start your streak!';
+}
+function renderChart(){
+ const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];let html='';
+ for(let offset=6;offset>=0;offset--){
+  const date=new Date();date.setDate(date.getDate()-offset);
+  const key=date.toDateString();
+  const count=[...tasks,...sessions].filter(item=>item.completedAt&&new Date(item.completedAt).toDateString()===key).length;
+  const height=count?Math.min(100,count*20):0;
+  html+=`<div class="chart-day">
+  <div class="bar-bg"><div class="bar" style="height:${height}%"></div></div>
+  <small>${names[date.getDay()]}</small><small>${count}</small></div>`;
+ }
+ document.getElementById('weeklyChart').innerHTML=html;
+}
+function updateDashboard(){
+ const doneTasks=tasks.filter(t=>t.done).length;
+ const goals=todaysGoals(),doneGoals=goals.filter(g=>g.done).length;
+ const doneSessions=sessions.filter(s=>s.done).length;
+ document.getElementById('taskStat').textContent=`${doneTasks}/${tasks.length}`;
+ document.getElementById('goalStat').textContent=`${doneGoals}/${goals.length}`;
+ const total=tasks.length+goals.length+sessions.length;
+ const completed=doneTasks+doneGoals+doneSessions;
+ const percent=total?Math.round(completed/total*100):0;
+ document.getElementById('dailyProgress').style.width=percent+'%';
+ document.getElementById('progressText').textContent=percent+'% completed';
+ updateStreak();renderChart();
+}
+
+// Notes
+function saveNote(){
+ const title=document.getElementById('noteTitle').value.trim();
+ const text=document.getElementById('noteText').value.trim();
+ if(!title||!text)return alert('Please enter a title and your notes!');
+ if(editingNoteId){
+  const note=notes.find(n=>n.id===editingNoteId);
+  if(note){note.title=title;note.text=text}
+ }else notes.push({id:makeId(),title,text});
+ saveData('studyNotes',notes);cancelNoteEdit();renderNotes();
+}
+function editNote(id){
+ const note=notes.find(n=>n.id===id);if(!note)return;
+ editingNoteId=id;
+ document.getElementById('noteTitle').value=note.title;
+ document.getElementById('noteText').value=note.text;
+ document.getElementById('noteTitle').scrollIntoView({behavior:'smooth'});
+}
+function deleteNote(id){
+ if(!confirm('Delete this note?'))return;
+ notes=notes.filter(n=>n.id!==id);saveData('studyNotes',notes);renderNotes();
+}
+function cancelNoteEdit(){
+ editingNoteId=null;
+ document.getElementById('noteTitle').value='';
+ document.getElementById('noteText').value='';
+}
+function renderNotes(){
+ document.getElementById('notesList').innerHTML=notes.length?notes.map(n=>`
+ <div class="note"><h3>${escapeHTML(n.title)}</h3>
+ <p>${escapeHTML(n.text)}</p>
+ <button class="secondary" onclick="editNote('${n.id}')">Edit</button>
+ <button class="danger" onclick="deleteNote('${n.id}')">Delete</button></div>`).join('')
+ :'<p class="muted">Your saved notes will appear here.</p>';
+}
+
+// Pomodoro timer
+let timerMode='study',remaining=25*60,timerInterval=null;
+function showTimer(){
+ document.getElementById('timerDisplay').textContent=
+ `${String(Math.floor(remaining/60)).padStart(2,'0')}:${String(remaining%60).padStart(2,'0')}`;
+ document.getElementById('timerMode').textContent=timerMode==='study'?'📖 Study Time':'☕ Break Time';
+}
+function setTimerMode(mode){
+ pauseTimer();timerMode=mode;remaining=mode==='study'?25*60:5*60;showTimer();
+}
+function startTimer(){
+ if(timerInterval||remaining<=0)return;
+ timerInterval=setInterval(()=>{
+  remaining--;showTimer();
+  if(remaining<=0){
+   pauseTimer();
+   if(timerMode==='study'){
+    sessions.push({id:makeId(),subject:'Pomodoro Study Session',time:new Date().toTimeString().slice(0,5),done:true,completedAt:Date.now()});
+    saveData('studySessions',sessions);renderSessions();
+   }
+   alert(timerMode==='study'?'Great work! Study session complete. Time for a break!':'Break finished! Ready to study again?');
+  }
+ },1000);
+}
+function pauseTimer(){
+ if(timerInterval)clearInterval(timerInterval);
+ timerInterval=null;
+}
+function resetTimer(){
+ pauseTimer();remaining=timerMode==='study'?25*60:5*60;showTimer();
+}
+
+// Enter key shortcuts
+document.getElementById('goalInput').addEventListener('keydown',e=>{if(e.key==='Enter')addGoal()});
+document.getElementById('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTask()});
+document.getElementById('subjectInput').addEventListener('keydown',e=>{if(e.key==='Enter')addSession()});
+
+// Initial display
+renderGoals();
+renderTasks();
+renderSessions();
+renderNotes();
+showTimer();
+renderCalendar();
+updateDashboard();
+</script>
+</body>
+</html>
